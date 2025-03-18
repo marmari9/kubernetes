@@ -1,3 +1,26 @@
+## Table of Contents
+
+- [Kubernetes Research](#kubernetes-research)  
+- [Kubernetes Architecture](#kubernetes-architecture)  
+- [The Cluster Setup](#the-cluster-setup)  
+- [Kubernetes Objects](#kubernetes-objects)  
+- [Security Concerns with Containers](#security-concerns-with-containers)  
+- [Maintained Images](#maintained-images)  
+- [Task: Get Kubernetes Running Using Docker Desktop](#task-get-kubernetes-running-using-docker-desktop)  
+- [Kubernetes Tasks Summary](#kubernetes-tasks-summary)  
+- [Task: Create Nginx Deployment Only](#task-create-nginx-deployment-only)  
+- [Task: Create a NodePort Service for Nginx](#task-create-a-nodeport-service-for-nginx)  
+- [Task: See What Happens When a Pod is Deleted](#task-see-what-happens-when-a-pod-is-deleted)  
+- [Task: Increase Replicas with No Downtime](#task-increase-replicas-with-no-downtime)  
+- [Task: Delete Kubernetes Deployments and Services](#task-delete-kubernetes-deployments-and-services)  
+- [Task: Deploy NodeJS Sparta Test App in Kubernetes](#task-deploy-nodejs-sparta-test-app-in-kubernetes)  
+- [Task: Add MongoDB Deployment & Persistent Volume](#task-add-mongodb-deployment--persistent-volume)  
+- [Task: Horizontal Pod Autoscaler (HPA) for NodeJS App](#task-horizontal-pod-autoscaler-hpa-for-nodejs-app)  
+- [Minikube Multi-App Deployment Log](#minikube-multi-app-deployment-log)  
+- [Deploying a Containerized 2-Tier Application on Minikube](#deploying-a-containerized-2-tier-application-on-minikube)  
+
+ 
+
 # Kubernetes Research
 
 ## Why is Kubernetes Needed?
@@ -37,6 +60,10 @@ A Kubernetes cluster consists of a **control plane** and multiple **worker nodes
 ### Master vs. Worker Nodes
 - **Master Node (Control Plane)**: Manages scheduling and scaling.
 - **Worker Nodes**: Run applications and workloads.
+
+
+   
+![alt text](images/Kubernetes-1.png)
 
 ### Managed vs. Self-Managed Kubernetes
 #### Managed (e.g., GKE, EKS)
@@ -112,7 +139,7 @@ Container images that are regularly updated and supported.
 4. **Enable Kubernetes** by checking the box.
 5. Click **Apply & Restart**.
 
-![alt text](<enable kubernetes.png>)
+![alt text](<images/enable kubernetes.png>)
 
 ---
 
@@ -125,7 +152,7 @@ Container images that are regularly updated and supported.
 3. If Kubernetes is running, you should see a node named `docker-desktop` in the output.
 
 
-![alt text](<task 1.png>)
+![alt text](<images/task 1.png>)
 
 ---
 
@@ -138,7 +165,7 @@ Container images that are regularly updated and supported.
      ```sh
      kubectl config use-context docker-desktop
      ```
-![alt text](<task 12.png>)
+![alt text](<images/task 12.png>)
 
 ---
 
@@ -188,26 +215,26 @@ Run the following commands to retrieve details:
   ```
 
 
-  ![alt text](deployment.png)
+  ![alt text](images/deployment.png)
 
 - **ReplicaSets details:**
   ```sh
   kubectl get rs
   ```
-  ![alt text](rs.png)
+  ![alt text](images/rs.png)
 
 - **Pods details:**
   ```sh
   kubectl get pods
   ```
-  ![alt text](<get pods-1.png>)
+  ![alt text](<images/get pods-1.png>)
 
   
 - **All three at once:**
   ```sh
   kubectl get all
   ```
-  ![alt text](<get all.png>)
+  ![alt text](<images/get all.png>)
 
 ## **Step 5: Connect to Deployment in Browser**
 ### **Using ClusterIP (Default)**
@@ -219,7 +246,7 @@ Run the following commands to retrieve details:
    ```sh
    kubectl get svc nginx-deployment
    ```
-   ![alt text](<no external ips.png>)
+   ![alt text](<images/no external ips.png>)
 
 3. Test inside the cluster:
    ```sh
@@ -274,7 +301,7 @@ kubectl get svc nginx-svc
 ```
 
 
-  ![alt text](nodeport.png)
+  ![alt text](images/nodeport.png)
 
 ## **Step 5: Test Access in Browser**
 Open your web browser and go to:
@@ -282,7 +309,7 @@ Open your web browser and go to:
 http://localhost:30001
 ```
 
-  ![alt text](<nodeport 30001.png>)
+  ![alt text](<images/nodeport 30001.png>)
 Or use your node’s IP:
 ```
 http://<node-ip>:30001
@@ -305,9 +332,9 @@ http://<node-ip>:30001
     ```sh
     kubectl get pods
     ```
+- a new pod is created when a pod is deleted to keep the desired number of pods in place.
 
-
-   ![alt text](<pods recreate after deletion.png>)
+   ![alt text](<images/pods recreate after deletion.png>)
     
 4. **Fetched detailed information about the newest pod:**
     ```sh
@@ -316,37 +343,102 @@ http://<node-ip>:30001
    ![](<newest pod created.png>)
 ---
 
-### **Task: Scale Deployment Without Downtime**
+# Task: Increase Replicas with No Downtime
 
-#### **Method 1: Edit the Deployment in Real-Time**
-```sh
-kubectl edit deployment nginx-deployment
-# Changed replicas: 4
-```
-
-#### **Method 2: Apply an Updated YAML File**
-```sh
-# Edited nginx-deploy.yml to replicas: 5
-kubectl apply -f nginx-deploy.yml
-```
-
-#### **Method 3: Scale via Command**
-```sh
-kubectl scale deployment nginx-deployment --replicas=6
-```
+## **Rationale**
+- We want to **increase the number of replicas (pods)** in our deployment **without downtime** to ensure high availability. 
+- Kubernetes provides multiple ways to **scale a deployment** dynamically.
 
 ---
 
-### **Task: Delete Kubernetes Deployments and Services**
+## **Method 1: Edit the Deployment in Real-Time**
 
+1. Use the following command to edit the deployment interactively:
+   ```sh
+   kubectl edit deployment nginx-deployment
+   ```
+2. Locate the `spec.replicas` field and change the value to `4`:
+   ```yaml
+   spec:
+     replicas: 4
+   ```
+3. Save and exit the editor.
+4. Verify that the replicas have increased:
+   ```sh
+   kubectl get deployment nginx-deployment
+   ```
+
+
+   ![alt text](<images/4 pods .png>)
+
+---
+
+## **Method 2: Apply a Modified Deployment File**
+
+1. Edit the existing **nginx-deploy.yml** file.
+2. Change the `replicas` field to `5`:
+   ```yaml
+   spec:
+     replicas: 5
+   ```
+3. Apply the changes without deleting the existing deployment:
+   ```sh
+   kubectl apply -f nginx-deploy.yml
+   ```
+4. Verify the number of replicas:
+   ```sh
+   kubectl get deployment nginx-deployment
+   ```
+  
+  ![alt text](<images/5 pods.png>)
+
+---
+
+## **Method 3: Use the Scale Command**
+
+1. Scale the deployment from 5 to 6 replicas using:
+   ```sh
+   kubectl scale deployment nginx-deployment --replicas=6
+   ```
+2. Verify the scaling:
+   ```sh
+   kubectl get deployment nginx-deployment
+   ```
+
+  ![alt text](<images/6 pods.png>)
+---
+
+# Task: Delete Kubernetes Deployments and Services
+
+## **Step 1: Delete Using YAML Manifest Files**
+To delete both the **nginx-deployment** Deployment and **nginx-svc** Service using the YAML files where they were defined, run:
 ```sh
 kubectl delete -f nginx-deploy.yml
 kubectl delete -f nginx-service.yml
 ```
 
+## **Step 2: Verify Deletion**
+Check if the deployment, ReplicaSets, and pods have been removed:
+```sh
+kubectl get deployments
+kubectl get rs  # Check if ReplicaSets are gone
+kubectl get pods
+```
+Check if the service has been deleted:
+```sh
+kubectl get svc
+```
+
+Expected output:
+- The **deployment, ReplicaSets, and pods** should no longer appear in the `kubectl get` output.
+- The **service** should no longer be listed under `kubectl get svc`.
+
+
+   ![alt text](<images/deleted resources.png>)
+
 ---
 
-### **Task: Deploy NodeJS Sparta Test App in Kubernetes**
+# **Task: Deploy NodeJS Sparta Test App in Kubernetes**
 
 #### **Step 1: Created Deployment & Service YAMLs**
 
@@ -368,7 +460,11 @@ spec:
     spec:
       containers:
       - name: nodejs-sparta
-        image: mrmri9/sparta-node:v1
+        image: mrmri9/sparta-node:v2
+        workingDir: /usr/src/app # Set correct working directory
+        command: ["/bin/sh", "-c"]
+        args:
+          - "node seeds/seed.js && node app.js"
         ports:
         - containerPort: 3000
         env:
@@ -387,9 +483,10 @@ spec:
   selector:
     app: nodejs-sparta
   ports:
-    - port: 3000
+    - protocol: TCP
+      port: 3000
       targetPort: 3000
-      nodePort: 30002
+      nodePort: 30002  # Accessible at http://localhost:30002
 ```
 
 #### **Step 2: Applied the Deployment & Service**
@@ -397,17 +494,70 @@ spec:
 kubectl apply -f nodejs-deploy.yml
 kubectl apply -f nodejs-service.yml
 ```
+   ![alt text](images/nodejs.png)
 
-#### **Step 3: Verified the App is Running**
-```sh
-kubectl get pods
-kubectl get services
+   ![alt text](<images/app 30002.png>)
+
+
+
+#### **Step 3: Deploy MongoDB**
+
+**`mongo-deploy.yml`**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:latest
+        ports:
+        - containerPort: 27017
 ```
-Accessed the app via `http://localhost:30002`.
+
+**`mongo-service.yml`**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  type: ClusterIP
+  selector:
+    app: mongo
+  ports:
+    - port: 27017
+      targetPort: 27017
+```
+
+#### **Step 4: Apply MongoDB Deployment**
+```sh
+kubectl apply -f mongo-deploy.yml
+kubectl apply -f mongo-service.yml
+```
+
+#### **Step 5: Verified the App is Running**
+```sh
+kubectl get all
+```
+
+   ![alt text](<images/pods running.png>)
+   
+   ![alt text](<images/posts 30002.png>)
 
 ---
 
-### **Task: Add MongoDB Deployment & Persistent Volume**
+# **Task: Add MongoDB Deployment & Persistent Volume**
 
 **`mongo-deploy.yml`**
 ```yaml
@@ -466,7 +616,7 @@ db.posts.find().pretty()
 
 ---
 
-### **Task: Horizontal Pod Autoscaler (HPA) for NodeJS App**
+# **Task: Horizontal Pod Autoscaler (HPA) for NodeJS App**
 
 1. **Configured Resource Limits in `nodejs-deploy.yml`**
 ```yaml
@@ -484,21 +634,23 @@ kubectl autoscale deployment nodejs-sparta-app --cpu-percent=50 --min=2 --max=10
 ```sh
 docker run --rm jordi/ab -n 5000 -c 50 http://host.docker.internal:30002/posts
 ```
+   ![alt text](images/apache.png)
+
+
 4. **Checked HPA Scaling**
 ```sh
-kubectl get hpa -w
+kubectl get hpa 
 ```
 
+  ![alt text](<images/exceed threshold.png>)
+
+   ![alt text](<images/pods running-1.png>)
+
+   
+   ![alt text](<images/scalling up.png>)
 
 
-
-
-
-
-
-
-
-
+   ![alt text](<images/scalling up-1.png>)
 
 
 # **Minikube Multi-App Deployment Log**
@@ -506,19 +658,38 @@ kubectl get hpa -w
 ## **Objective**
 Deploy **three applications** on a single cloud instance running **Minikube**, ensuring that each app is accessible externally via different endpoints.
 
-## **Tasks Completed Today**
 
 ### **1️ Setting Up Minikube on EC2**
 - Installed Minikube with `none` driver (since we are running it directly on EC2).
 - Installed required dependencies:
   - `kubectl`
-  - `conntrack`
-  - `crictl`
+  - `minikube`
   - `docker`
-- Configured Minikube to start with:
-  ```bash
-  minikube start --driver=none
-  ```
+
+#### **Steps to Install and Start Minikube on the Cloud Instance**
+1. **Update and install dependencies:**
+   ```sh
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install -y curl wget apt-transport-https conntrack
+   ```
+2. **Install Docker:**
+   ```sh
+   sudo apt install -y docker.io
+   sudo usermod -aG docker $USER
+   ```
+3. **Download and install Minikube:**
+   ```sh
+   curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+   sudo install minikube-linux-amd64 /usr/local/bin/minikube
+   ```
+4. **Start Minikube:**
+   ```sh
+   minikube start --driver=none
+   ```
+5. **Verify installation:**
+   ```sh
+   kubectl get nodes
+   ```
 
 ### **2️ Deploying First Application (NodePort Service)**
 - **App Image:** `daraymonsta/nginx-257:dreamteam`
@@ -578,9 +749,6 @@ Deploy **three applications** on a single cloud instance running **Minikube**, e
       server_name _;
       location / {
           proxy_pass http://192.168.49.2:30001;
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       }
   }
   ```
@@ -592,6 +760,8 @@ Deploy **three applications** on a single cloud instance running **Minikube**, e
   ```bash
   curl http://<EC2-public-IP>
   ```
+    
+    ![alt text](<images/task 3 part 1.png>)
 
 
 
@@ -652,11 +822,6 @@ Deploy **three applications** on a single cloud instance running **Minikube**, e
   curl http://10.106.186.126:9000
   ```
 
-
-![alt text](<task 3 part 2.png>)
-
-
-
 ### **5️ Configuring Nginx Reverse Proxy for Second App**
 - Updated `/etc/nginx/sites-available/default`:
   ```nginx
@@ -665,9 +830,6 @@ Deploy **three applications** on a single cloud instance running **Minikube**, e
       server_name _;
       location / {
           proxy_pass http://10.106.186.126:9000;
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       }
   }
   ```
@@ -680,45 +842,76 @@ Deploy **three applications** on a single cloud instance running **Minikube**, e
   curl http://<EC2-public-IP>:9000
   ```
 
----
-
-## **Challenges & Blockers Faced Today**
-
-### **1️ Minikube Start Failed Due to Missing Dependencies**
-**Issue:**
-- Minikube required `conntrack`, `crictl`, and `docker` but they were missing.
-**Solution:**
-- Installed missing packages:
-  ```bash
-  sudo apt install -y conntrack cri-tools docker.io
-  ```
-
-### **2️ External Access to First App (NodePort) Failing**
-**Issue:**
-- The Nginx reverse proxy was misconfigured, causing `502 Bad Gateway` errors.
-**Solution:**
-- Fixed the Nginx config and restarted the service.
-
-### **3️ LoadBalancer Service Wasn’t Assigning an External IP**
-**Issue:**
-- The `EXTERNAL-IP` for the LoadBalancer service remained in `<pending>` state.
-**Solution:**
-- Enabled Minikube tunnel:
-  ```bash
-  minikube tunnel
-  ```
-
-### **4️ Nginx Not Forwarding Requests to Second App**
-**Issue:**
-- Reverse proxy was set to `localhost:9000`, but the LoadBalancer service was using `10.106.186.126`.
-**Solution:**
-- Changed `proxy_pass` to:
-  ```nginx
-  proxy_pass http://10.106.186.126:9000;
-  ```
-- Restarted Nginx and tested external access.
+   ![alt text](<images/task 3 part 2-1.png>)
 
 ---
+
+#### **Third App: Hello Minikube (LoadBalancer Service on Port 8080)**
+- **Follow [official docs](https://kubernetes.io/docs/tutorials/hello-minikube/)**
+- **Service Type:** `LoadBalancer`
+- **Use existing Minikube tunnel**
+- **Expose the app externally via reverse proxy on `<instance-public-IP>/hello`**
+
+**Step 1: Install `kubectl`**
+```sh
+sudo snap install kubectl --classic
+```
+**Step 2: Deploy Hello Minikube**
+```sh
+kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.39 -- /agnhost netexec --http-port=8080
+```
+**Step 3: Verify Deployment and Pod Creation**
+```sh
+kubectl get deployments
+kubectl get pods
+```
+**Step 4: Expose Hello Minikube as a LoadBalancer Service**
+```sh
+kubectl expose deployment hello-node --type=LoadBalancer --port=8080
+```
+**Step 5: Verify Service Creation**
+```sh
+kubectl get services
+```
+**Step 6: Start Minikube Tunnel to Simulate a Load Balancer**
+Since Minikube does not natively support cloud LoadBalancers, we use a tunnel:
+```sh
+minikube tunnel
+```
+**Step 7: Verify the App is Running**
+```sh
+minikube service hello-node
+```
+Since there’s no browser installed on the VM, run:
+```sh
+curl <URL-from-minikube-service-command>
+```
+**Step 8: Configure Nginx Reverse Proxy**
+Edit `/etc/nginx/sites-available/default` and add:
+```nginx
+server {
+    listen 80;
+    location /hello {
+        proxy_pass http://127.0.0.1:8080;
+    }
+}
+```
+**Step 9: Restart Nginx**
+```sh
+sudo nginx -t
+sudo systemctl restart nginx
+```
+**Step 10: Test the Deployment**
+Visit:
+```
+http://<instance-public-IP>/hello
+```
+---
+
+### **Why Use Minikube Tunnel?**
+- Emulates a **LoadBalancer** on a **single-node Kubernetes cluster**.
+- Required for **LoadBalancer services** in Minikube since there's no real cloud provider.
+- Ensures external traffic can reach **Kubernetes services**.
 
 
 # Deploying a Containerized 2-Tier Application on Minikube
@@ -783,7 +976,7 @@ minikube status
 kubectl get nodes
 ```
 
-![alt text](<minikube work after reboot.png>)
+![alt text](<images/minikube work after reboot.png>)
 
 
 
@@ -927,9 +1120,9 @@ kubectl get pods
 kubectl top pods
 ```
 
-![alt text](<HPA scalling .png>)
+![alt text](<images/HPA scalling .png>)
 
-![alt text](<scaling dropped.png>)
+![alt text](<images/scaling dropped.png>)
 
 
 ## Step 6: Expose the Application via NodePort
@@ -982,9 +1175,6 @@ server {
     listen 80;
     location / {
         proxy_pass http://<MINIKUBE_IP>:30008;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
 ```
@@ -1000,5 +1190,10 @@ Now, access the app via the public IP of the EC2 instance:
 ```sh
 http://<EC2_PUBLIC_IP>
 ```
+
+  ![alt text](images/app.png)
+
+
+  ![alt text](<images/posts page working .png>)
 
 
