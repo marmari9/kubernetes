@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-sparta-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nodejs-sparta
+  template:
+    metadata:
+      labels:
+        app: nodejs-sparta
+    spec:
+      containers:
+      - name: nodejs-sparta
+        image: mrmri9/sparta-node:v2  
+        ports:
+        - containerPort: 3000
